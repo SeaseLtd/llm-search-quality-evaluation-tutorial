@@ -20,10 +20,8 @@ Before we begin, ensure you have the following tools installed and configured:
 
 * Docker & docker-compose: We use dockerized Solr instance as a search engine.
   * Verify with `docker --version` and `docker-compose --version`
-* Python 3.10+: Required for running the evaluation toolkit.
-  * Verify `python --version`
 * uv: Python package installer. This is used to set up the project's virtual environment. 
-  * Install with `pip install uv` (or see official [uv install guide](https://docs.astral.sh/uv/getting-started/installation/#standalone-installer))
+  * Install with [uv install guide](https://docs.astral.sh/uv/getting-started/installation/#standalone-installer)
 
 
 ## Get Started
@@ -146,7 +144,13 @@ Once we have the relevance dataset (`ratings.json`) file, we set up a configurat
 * See [approximate_search_evaluator_config.yaml](https://github.com/SeaseLtd/rated-ranking-evaluator/blob/dataset-generator/rre-tools/configs/approximate_search_evaluator/approximate_search_evaluator_config.yaml) for an example.
 * For detailed configuration info, see the [full documentation](https://github.com/SeaseLtd/rated-ranking-evaluator/blob/dataset-generator/rre-tools/docs/approximate_search_evaluator/README.md).
 
-To run the approximate search evaluator:
+Before running the approximate search evaluator, you need to be sure to have both [Java](https://www.java.com/) and 
+[Maven](https://maven.apache.org/) installed in your machine. After doing so, 
+[Sease's RRE](https://github.com/SeaseLtd/rated-ranking-evaluator/) Maven archetype must be exposed to be found by your 
+local machine. This is done by following the Step 1 in the
+[guide in RRE Wiki](https://github.com/SeaseLtd/rated-ranking-evaluator/wiki/Maven%20Archetype).
+
+Now we can run the approximate search evaluator:
 
 ```bash
 uv run approximate_search_evaluator --config <path-to-config-yaml>
