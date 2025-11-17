@@ -1,14 +1,13 @@
-# Search Quality Evaluation Tutorial
-Hi there, welcome to our search quality evaluation tutorial!
+# LLM Search Quality Evaluation Tutorial
+Hi there, welcome to our LLM search quality evaluation tutorial!
 
 This tutorial guides you through a complete workflow 
 going from relevance-labeled dataset generation to comparing exact and approximate vector search performance evaluations.
 
 ##  What You'll Learn
 * How to generate a relevance-labeled dataset for search evaluation.
-* How to run and evaluate an embedding model using MTEB with exact vector search.
+* How to run and evaluate an embedding model with exact vector search.
 * How to run an approximate vector search (ANN) and compare its performance against the exact vector search.
-
 
 ## Prerequisites
 Before we begin, ensure you have the following tools installed and configured:
@@ -35,7 +34,7 @@ What we do next:
 ### Set up Rated Ranking Evaluator Project
 Set up the project and install the dependencies.
 
-Clone [rated-ranking-evaluator repo](https://github.com/SeaseLtd/rated-ranking-evaluator) to your local machine:
+To clone [rated-ranking-evaluator repo](https://github.com/SeaseLtd/rated-ranking-evaluator) to your local machine:
 ```bash
 git clone git@github.com:SeaseLtd/rated-ranking-evaluator.git
 
@@ -44,7 +43,6 @@ rated-ranking-evaluator$ cd rre-tools
 ```
 
 We use `uv` to create a virtual environment and install all the required packages:
-
 ```bash
 rre-tools$ uv sync
 ```
@@ -56,17 +54,15 @@ We use Solr and run dockerized Solr locally. There is `docker-services` helper d
 See [docker-services](https://github.com/SeaseLtd/rated-ranking-evaluator/tree/dataset-generator/rre-tools/docker-services)
 
 In addition to running Solr instance, we need to index some documents for the actual search evaluation. 
-We use [this dataset](https://github.com/SeaseLtd/llm-search-quality-evaluation-tutorial/data/dataset.json
-), (~100k docs) extracted from  [BBC news](https://huggingface.co/datasets/RealTimeData/bbc_news_alltime/viewer/2017-02?row=96]).
-The dataset is in this repo in `data/dataset.json`
-We need to copy this dataset to  `docker-services/solr-init/data`:
+We use [this dataset](https://github.com/SeaseLtd/llm-search-quality-evaluation-tutorial/data/dataset.json), (~100k docs) extracted from  [BBC news](https://huggingface.co/datasets/RealTimeData/bbc_news_alltime/viewer/2017-02?row=96]).
+The dataset is in this repo in `llm-search-quality-evaluation-tutorial/data/dataset.json`
 
+To copy [this dataset](https://github.com/SeaseLtd/llm-search-quality-evaluation-tutorial/data/dataset.json) to the repo  `rre-tools/docker-services/solr-init/data`:
 ```bash
 rre-tools$ cp $localPath/llm-search-quality-evaluation-tutorial/data/dataset.json  ./docker-services/solr-init/data
 ```
 
-Run Solr (available at http://localhost:8983/solr) and  index the dataset: 
-
+To run Solr (can be reached at http://localhost:8983/solr) and  index the dataset:
 ```bash
 rre-tools$ cd docker-services
 
@@ -82,9 +78,15 @@ Before running, we need to set up a configuration file.
 * See [dataset_generator_config.yaml](https://github.com/SeaseLtd/rated-ranking-evaluator/blob/dataset-generator/rre-tools/configs/dataset_generator/dataset_generator_config.yaml) for an example.
 * For detailed configuration info, see the [README](https://github.com/SeaseLtd/rated-ranking-evaluator/blob/dataset-generator/rre-tools/docs/dataset_generator/README.md)
 
+Before running the dataset generator, we need to either set up a LLM configuration file (e.g. provide LLM model API key) or
+use [our temporary datastore](https://github.com/SeaseLtd/llm-search-quality-evaluation-tutorial/data/datastore.json) `llm-search-quality-evaluation-tutorial/data/datastore.json` which contains LLM-generated queries & scores.
+
+To copy the datastore:
+```bash
+rre-tools$ cp $localPath/llm-search-quality-evaluation-tutorial/data/datastore.json  ./resources/tmp
+```
 
 To run the dataset generator:
-
 ```bash
 rre-tools$ uv run dataset_generator --config <path-to-config-yaml>
 ```
