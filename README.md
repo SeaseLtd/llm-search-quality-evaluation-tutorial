@@ -4,6 +4,12 @@ Hi there, welcome to our LLM search quality evaluation tutorial!
 This tutorial guides you through a complete workflow 
 going from relevance-labeled dataset generation to comparing exact and approximate vector search performance evaluations.
 
+There are two parts: the Dataset Generator and the Vector Search Doctor. The following diagram illustrates the overall workflow:
+<div>
+  <img src="assets/workflow.png" width="420">
+</div>
+
+
 ##  What You'll Learn
 * How to generate a relevance-labeled dataset for search evaluation.
 * How to run and evaluate an embedding model with exact vector search.
