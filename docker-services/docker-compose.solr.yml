@@ -1,0 +1,29 @@
+services:
+  solr:
+    image: solr:9.8.1
+    container_name: solr_test
+    ports:
+      - "8983:8983"
+    command: ["solr-precreate", "testcore"]
+
+  prepare-embeddings-dir:
+    build:
+      context: solr-init
+    command: ["sh","-c","mkdir -p /workspace/resources/embeddings"]
+    volumes:
+      - ../resources:/workspace/resources
+    restart: "no"
+
+  solr-init:
+    build:
+      context: solr-init
+    depends_on:
+      - solr
+      - prepare-embeddings-dir
+    environment:
+      - FORCE_REINDEX=false
+    volumes:
+      - ./solr-init/data/dataset.json:/opt/rre-dataset-generator/data/dataset.json
+      - ../resources/embeddings:/opt/rre-dataset-generator/embeddings
+    working_dir: /opt/rre-dataset-generator
+    command: ["python", "/opt/rre-dataset-generator/solr_init.py"]

@@ -1,0 +1,49 @@
+services:
+  opensearch:
+    image: opensearchproject/opensearch:3.1.0
+    container_name: opensearch
+    environment:
+      - discovery.type=single-node
+      - node.name=opensearch
+      - bootstrap.memory_lock=true
+      - DISABLE_INSTALL_DEMO_CONFIG=true
+      - DISABLE_SECURITY_PLUGIN=true
+    ports:
+      - 9200:9200
+      - 9600:9600
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:3.1.0
+    container_name: opensearch-dashboards
+    ports:
+      - 5601:5601
+    expose:
+      - "5601"
+    environment:
+      - OPENSEARCH_HOSTS=http://opensearch:9200
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+    depends_on:
+      - opensearch
+
+  prepare-embeddings-dir:
+    build:
+      context: opensearch-init
+    command: [ "sh","-c","mkdir -p /workspace/resources/embeddings" ]
+    volumes:
+      - ../resources:/workspace/resources
+    restart: "no"
+
+  opensearch-init:
+    build:
+      context: opensearch-init
+    depends_on:
+      - opensearch
+      - prepare-embeddings-dir
+    environment:
+      - FORCE_REINDEX=false
+    volumes:
+      - ./opensearch-init/data/dataset.jsonl:/opt/rre-dataset-generator/data/dataset.jsonl
+      - ../resources/embeddings:/opt/rre-dataset-generator/embeddings
+    working_dir: /opt/rre-dataset-generator
+    command: [ "python", "/opt/rre-dataset-generator/opensearch_init.py" ]
+

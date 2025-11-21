@@ -1,0 +1,32 @@
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.4
+    container_name: elasticsearch_test
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+
+  prepare-embeddings-dir:
+    build:
+      context: elasticsearch-init
+    command: [ "sh","-c","mkdir -p /workspace/resources/embeddings" ]
+    volumes:
+      - ../resources:/workspace/resources
+    restart: "no"
+
+  eslasticsearch-init:
+    build: ./elasticsearch-init
+    depends_on:
+      - elasticsearch
+      - prepare-embeddings-dir
+    environment:
+      - FORCE_REINDEX=false
+    volumes:
+      - ./elasticsearch-init/data/dataset.jsonl:/opt/rre-dataset-generator/data/dataset.jsonl
+      - ../resources/embeddings:/opt/rre-dataset-generator/embeddings
+    working_dir: /opt/rre-dataset-generator
+    command: [ "python", "/opt/rre-dataset-generator/elasticsearch_init.py" ]
+
