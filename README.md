@@ -154,7 +154,7 @@ we will re-index the dataset with the doc embeddings in Solr.
 Either copy+paste or run the command below by substituting `$absPath`:
 
 ```bash
-cp ./resources/embeddings/documents_embeddings.jsonl  $absPath/llm-search-quality-evaluation-tutorial/embeddings
+cp ./resources/embeddings/documents_embeddings.jsonl  $absPath/llm-search-quality-evaluation-tutorial/embeddings/documents_embeddings.jsonl
 ```
 
 Then, we can re-index the document embeddings to Solr from the `llm-search-quality-evaluation-tutorial` repo:
