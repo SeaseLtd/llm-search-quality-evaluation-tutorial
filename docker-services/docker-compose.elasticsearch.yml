@@ -26,7 +26,7 @@ services:
       - FORCE_REINDEX=false
     volumes:
       - ./elasticsearch-init/data/dataset.jsonl:/opt/rre-dataset-generator/data/dataset.jsonl
-      - ../resources/embeddings:/opt/rre-dataset-generator/embeddings
+      - ../embeddings:/opt/rre-dataset-generator/embeddings
     working_dir: /opt/rre-dataset-generator
     command: [ "python", "/opt/rre-dataset-generator/elasticsearch_init.py" ]
 

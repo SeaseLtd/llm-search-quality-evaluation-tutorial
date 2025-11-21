@@ -1,16 +1,16 @@
 # Creating the environment
 
-## Prerequisites (Docker Compose)
-Follow the instructions to install Docker Compose on your system: https://docs.docker.com/compose/install/
+## Prerequisites (Docker Desktop)
+Follow the instructions to install Docker Desktop on your system: https://docs.docker.com/desktop/
 
 ## Running the search engine
 
 ### Running Solr (Standalone)
 
-
-To run a local Solr test environment using docker-compose:
+To run a local Solr test environment using docker compose:
 ```bash
-cd rre-tools/docker-services/
+cd docker-services/
+docker compose -f docker-compose.solr.yml up --build
 ```
 
 > This environment comes with the default Solr configuration. All text field are preprocessed as seen in the [Schemaless 
@@ -18,44 +18,24 @@ mode](https://solr.apache.org/guide/solr/latest/indexing-guide/schemaless-mode.h
 the [Solr Admin UI](https://solr.apache.org/guide/solr/latest/getting-started/solr-admin-ui.html) and check the schema 
 of your collection.
 
-Depending on your Docker version, you may need to use `docker compose` instead of `docker-compose`.
-If you have Docker Compose v1 installed, use:
-```bash
-docker-compose -f docker-compose.solr.yml up --build
-```
-If you have Docker Compose v2 installed, use:
-```bash
-docker compose -f docker-compose.solr.yml up --build
-```
 
 This will start 2 services:
  - `solr`, available at http://localhost:8983/solr
  - `solr-init`, loads documents from solr-init/data/dataset.json.
 
-**Note:** for hygiene reasons we recommend building the `Solr` container without cache first:
-```bash
-docker-compose -f docker-compose.solr.yml build --no-cache
-```
 
-### Re-indexing dataset to Solr
-With a flag `FORCE_REINDEX`,  Solr reruns and re-indexes dataset without stopping Solr
+### Re-indexing Dataset to Solr
+With a flag `FORCE_REINDEX`,  Solr re-runs and re-indexes dataset without stopping Solr
 ```bash
-docker-compose -f docker-compose.solr.yml run --rm -e FORCE_REINDEX=true solr-init
+docker compose -f docker-compose.solr.yml run --rm -e FORCE_REINDEX=true solr-init
 ```
+---
 
 ### Running OpenSearch (Single Node)
 
-To run a local OpenSearch test environment using docker-compose:
+To run a local OpenSearch test environment using docker compose:
 ```bash
-cd rre-tools/docker-services/
-```
-
-Depending on your Docker version, you may need to use `docker compose` instead of `docker-compose`, i.e., 
-```bash
-docker-compose -f docker-compose.opensearch.yml up --build
-```
-or
-```bash
+cd docker-services/
 docker compose -f docker-compose.opensearch.yml up --build
 ```
 
@@ -63,20 +43,13 @@ This will start 2 services:
  - `opensearch`, available at http://localhost:9200/
  - `opensearch-init`, loads documents (`bulk indexing`) from opensearch-init/data/dataset.jsonl.
 
+---
 
 ### Running Elasticsearch (Single Node)
 
-Similarly to Solr, to run a local Elasticsearch test environment using docker-compose:
+Similarly to Solr, to run a local Elasticsearch test environment using docker compose:
 ```bash
-cd rre-tools/docker-services/
-```
-
-Depending on your Docker version, you may need to use `docker compose` instead of `docker-compose`, i.e.,
-```bash
-docker-compose -f docker-compose.elasticsearch.yml up --build 
-```
-or
-```bash
+cd docker-services/
 docker compose -f docker-compose.elasticsearch.yml up --build
 ```
 
@@ -85,41 +58,30 @@ This will start 2 services:
  - `elasticsearch-init`, loads documents from elasticsearch-init/data/dataset.jsonl only if Elasticsearch doesn't have 
 any documents in the index.
 
-
+---
 
 ### Running Vespa (Standalone)
 
-To run a local Vespa test environment using docker-compose:
+To run a local Vespa test environment using docker compose:
 ```bash
 cd docker-services/
-```
-
-Depending on your Docker version, you may need to use `docker compose` instead of `docker-compose`.
-If you have Docker Compose v1 installed, use:
-
-```bash
-docker-compose -f docker-compose.vespa.yml up --build
-```
-
-If you have Docker Compose v2 installed, use:
-```bash
-docker compose -f docker-compose.vespa.yml build --no-cache
- && docker compose -f docker-compose.vespa.yml up --force-recreate --remove-orphans 
+docker compose -f docker-compose.vespa.yml up --build
 ```
 
 This will start 2 services:
  - `vespa`, available at http://localhost:8080/
  - `vespa-init`, loads documents from vespa-init/data/dataset.json.
 
+---
 
-## Running the Quepid container
+## Running Quepid Container
 
 ```bash
 cd docker-services/
 docker compose -f docker-compose.quepid.yml up -d
 
-# then go to http://localhost/sessions/new and sign up / sign in.
 ```
+Then go to http://localhost/sessions/new and sign up/sign in
 
 This will download the Quepid nightly image and start two containers:
 - `quepid_app` (HTTP available at http://localhost on port 80; internal port 5000)

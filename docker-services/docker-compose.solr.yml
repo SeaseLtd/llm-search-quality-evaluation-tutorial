@@ -24,6 +24,6 @@ services:
       - FORCE_REINDEX=false
     volumes:
       - ./solr-init/data/dataset.json:/opt/rre-dataset-generator/data/dataset.json
-      - ../resources/embeddings:/opt/rre-dataset-generator/embeddings
+      - ../embeddings:/opt/rre-dataset-generator/embeddings
     working_dir: /opt/rre-dataset-generator
     command: ["python", "/opt/rre-dataset-generator/solr_init.py"]
