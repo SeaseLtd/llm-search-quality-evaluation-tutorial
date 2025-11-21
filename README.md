@@ -76,7 +76,7 @@ In addition to running Solr instance, we need to index some documents for the ac
 We will use [large dataset](docker-services/solr-init/data/dataset.json) (`dataset.json`).
 The dataset comes from BBC news, and it contains around ~100k docs. As it's big, we use Git LFS to store in GitHub.
 
-If you want to see the content of the large dataset file, run the following  commands 
+Run the following commands to get the actual content of the files instead of references:
 from the `llm-search-quality-evaluation-tutorial` repo: 
 ```bash
 llm-search-quality-evaluation-tutorial$ git lfs install
