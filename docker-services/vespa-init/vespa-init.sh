@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+set -e -o pipefail
 
 CONFIG_URL="${CONFIG_URL:-http://vespa:19071}"
 HTTP_URL="${HTTP_URL:-http://vespa:8080}"
@@ -34,7 +34,7 @@ for i in {1..300}; do
 done
 
 # Feed (opt)
-EXPECTED_DOCS=$(ls /data/*.json 2>/dev/null | wc -l | tr -d ' ')
+EXPECTED_DOCS=$(jq '. | length' /data/dataset.json)
 if [[ "${EXPECTED_DOCS:-0}" -gt 0 ]]; then
   echo "Checking existing documents (query hits=0)…"
   # Small backoff because cluster might be warming up
@@ -55,9 +55,13 @@ if [[ "${EXPECTED_DOCS:-0}" -gt 0 ]]; then
     echo "Index already populated ($current_count docs) — skipping feed."
   else
     echo "Feeding $EXPECTED_DOCS documents…"
-    vespa feed --target "$HTTP_URL" /data/*.json
+#   Trasforming the dataset to Vespa feed format:
+#   - Adding 'id' field as Vespa document id (prefix 'id:doc:doc::')
+#   - Ensuring 'authors' field is always an array
+    jq 'map({put: ("id:doc:doc::" + (.id | tostring)), fields: (. + {authors: (if .authors | type == "string" then [.authors] else .authors end)})})' /data/dataset.json > /opt/dataset-ids.json
+    vespa feed --target "$HTTP_URL" /opt/dataset-ids.json
 
-    echo "Waiting for search visibility…"
+    echo "Verifying all documents are indexed…"
     for i in {1..300}; do
       current_count=$(curl -fsS "$HTTP_URL/search/?yql=select+*+from+sources+*+where+true&hits=0&timeout=10s" \
                        | jq '.root.fields.totalCount // 0')

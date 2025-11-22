@@ -9,17 +9,17 @@ If handling Vespa alone is consider difficult, with Compose it hardens a bit. He
 
 -   **Open a Shell Inside the Container**
     ```bash
-	# Start the container
+    # Start the container
     docker compose -f docker-compose.vespa.yaml up -d
-	# Open a shell inside the container
-	docker exec -it vespa bash
+    # Open a shell inside the container
+    docker exec -it vespa bash
     ```
 
 -   **Follow Container Logs**
     ```bash
     docker compose -f docker-compose.vespa.yaml logs -f
-	# or the makefile shortcut
-	make vespa-logs
+    # or the makefile shortcut
+    make vespa-logs
     ```
 
 ---

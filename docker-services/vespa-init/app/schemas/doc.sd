@@ -6,12 +6,30 @@ schema doc {
         field title type string {
             indexing: summary | index
         }
+        field published_date type string {
+            indexing: summary | index
+        }
+        field authors type array<string> {
+            indexing: summary | index
+        }
         field description type string {
+            indexing: summary | index
+        }
+        field section type string {
+            indexing: summary | index
+        }
+        field content type string {
+            indexing: summary | index
+        }
+        field link type string {
+            indexing: summary | index
+        }
+        field top_image type string {
             indexing: summary | index
         }
     }
     fieldset default {
-        fields: title, description
+        fields: title, description, content
     }
     rank-profile default inherits default {
         first-phase {
