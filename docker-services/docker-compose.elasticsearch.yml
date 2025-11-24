@@ -9,19 +9,10 @@ services:
       - xpack.security.enabled=false
       - xpack.security.enrollment.enabled=false
 
-  prepare-embeddings-dir:
-    build:
-      context: elasticsearch-init
-    command: [ "sh","-c","mkdir -p /workspace/resources/embeddings" ]
-    volumes:
-      - ../resources:/workspace/resources
-    restart: "no"
-
   eslasticsearch-init:
     build: ./elasticsearch-init
     depends_on:
       - elasticsearch
-      - prepare-embeddings-dir
     environment:
       - FORCE_REINDEX=false
     volumes:
