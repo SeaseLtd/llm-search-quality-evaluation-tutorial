@@ -12,9 +12,9 @@ services:
   prepare-embeddings-dir:
     build:
       context: elasticsearch-init
-    command: [ "sh","-c","mkdir -p /workspace/resources/embeddings" ]
+    command: [ "sh","-c","mkdir -p /workspace/embeddings" ]
     volumes:
-      - ../resources:/workspace/resources
+      - ../:/workspace
     restart: "no"
 
   eslasticsearch-init:

@@ -188,6 +188,9 @@ def index_documents(endpoint: str, docs: list[dict[str, Any]]) -> None:
 
     update_url_no_commit = f"{endpoint.rstrip('/')}/update?commit=false"
     update_url_commit = f"{endpoint.rstrip('/')}/update?commit=true"
+    list_url_split = endpoint.rstrip('/').split("/")
+    core_name = list_url_split[-1]
+    url_check_status = f"{'/'.join(list_url_split[:-1])}/admin/cores?action=STATUS&core={core_name}&wt=json"
 
     for i in range(num_batches):
         start_index = i * INDEX_BATCH_SIZE
@@ -214,6 +217,34 @@ def index_documents(endpoint: str, docs: list[dict[str, Any]]) -> None:
             raise Exception(f"Failed during batch {i + 1} indexing.") from e
 
     log.info("Successfully indexed %d documents in %d batches.", total_docs, num_batches)
+
+    log.info("Checking Solr index status for 'current=true'...")
+    max_retries = 10
+    retry_delay = 1
+    for attempt in range(1, max_retries + 1):
+        try:
+            resp = requests.get(url_check_status, timeout=DEFAULT_TIMEOUT)
+            resp.raise_for_status()
+            data = resp.json()
+
+            current = data["status"][core_name]["index"].get("current", None)
+
+            if current is True:
+                log.info(f"Solr index is current (attempt {attempt}/{max_retries})")
+                return
+            response = requests.post(update_url_commit, timeout=DEFAULT_TIMEOUT)
+            response.raise_for_status()
+            log.warning(f"index.current = {current} (attempt {attempt}/{max_retries}), retrying in {retry_delay}s...")
+
+        except Exception as e:
+            log.error(f"Error checking Solr index status (attempt {attempt}): {e}")
+
+        time.sleep(retry_delay)
+
+    raise Exception(
+        f"Solr index did not reach current=true after {max_retries} retries "
+        f"with {retry_delay}s delay between attempts."
+    )
 
 
 def main() -> int:
