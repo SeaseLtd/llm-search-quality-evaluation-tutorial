@@ -15,9 +15,9 @@ import requests
 HOST_ENDPOINT = os.getenv("OPENSEARCH_ENDPOINT", "http://opensearch:9200")
 INDEX_NAME = os.getenv("INDEX_NAME", "testcore")
 INDEX_ENDPOINT = HOST_ENDPOINT + "/" + INDEX_NAME
-DATASET = os.getenv("DATASET", "/opt/rre-dataset-generator/data/dataset.jsonl")
+DATASET = os.getenv("DATASET", "/opt/app/data/dataset.jsonl")
 
-EMBEDDINGS_FOLDER = "/opt/rre-dataset-generator/embeddings"
+EMBEDDINGS_FOLDER = "/opt/app/embeddings"
 os.makedirs(EMBEDDINGS_FOLDER, exist_ok=True)
 
 EMBEDDINGS_FILE = os.path.join(EMBEDDINGS_FOLDER, "documents_embeddings.jsonl")
