@@ -6,20 +6,11 @@ services:
       - "8983:8983"
     command: ["solr-precreate", "testcore"]
 
-  prepare-embeddings-dir:
-    build:
-      context: solr-init
-    command: ["sh","-c","mkdir -p /workspace/resources/embeddings"]
-    volumes:
-      - ../resources:/workspace/resources
-    restart: "no"
-
   solr-init:
     build:
       context: solr-init
     depends_on:
       - solr
-      - prepare-embeddings-dir
     environment:
       - FORCE_REINDEX=false
     volumes:
