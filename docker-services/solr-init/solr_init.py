@@ -13,9 +13,9 @@ from typing import Optional, Any
 import requests
 
 COLLECTION_ENDPOINT = os.getenv("COLLECTION_ENDPOINT", "http://solr:8983/solr/testcore")
-DATASET = os.getenv("DATASET", "/opt/rre-dataset-generator/data/dataset.json")
+DATASET = os.getenv("DATASET", "/opt/app/data/dataset.json")
 
-EMBEDDINGS_FOLDER = "/opt/rre-dataset-generator/embeddings"
+EMBEDDINGS_FOLDER = "/opt/app/embeddings"
 os.makedirs(EMBEDDINGS_FOLDER, exist_ok=True)
 
 EMBEDDINGS_FILE = os.path.join(EMBEDDINGS_FOLDER, "documents_embeddings.jsonl")

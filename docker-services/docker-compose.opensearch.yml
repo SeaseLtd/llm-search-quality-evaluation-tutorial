@@ -33,8 +33,8 @@ services:
     environment:
       - FORCE_REINDEX=false
     volumes:
-      - ./opensearch-init/data/dataset.jsonl:/opt/rre-dataset-generator/data/dataset.jsonl
-      - ../embeddings:/opt/rre-dataset-generator/embeddings
-    working_dir: /opt/rre-dataset-generator
-    command: [ "python", "/opt/rre-dataset-generator/opensearch_init.py" ]
+      - ./opensearch-init/data/dataset.jsonl:/opt/app/data/dataset.jsonl
+      - ../embeddings:/opt/app/embeddings
+    working_dir: /opt/app
+    command: [ "python", "/opt/app/opensearch_init.py" ]
 
