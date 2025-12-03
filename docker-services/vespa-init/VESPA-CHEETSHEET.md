@@ -1,6 +1,6 @@
 # Vespa Integration Cheatsheet
 
-If handling Vespa alone is consider difficult, with Compose it hardens a bit. Hence, here we add a summary of commands to ease things while inspecting, and testing the local Vespa integration environment.
+If handling Vespa alone is difficult, with Compose it hardens a bit. Hence, here we add a summary of commands to ease things while inspecting, and testing the local Vespa integration environment.
 
 ---
 

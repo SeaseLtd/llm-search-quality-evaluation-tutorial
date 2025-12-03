@@ -27,13 +27,39 @@ schema doc {
         field top_image type string {
             indexing: summary | index
         }
+
+        field vector type tensor<float>(x[384]) {
+            # 'attribute': stores vectors in memory for fast access
+            # 'index': creates the HNSW index for Approximate Nearest Neighbor search
+            # 'summary' return embeddings/vectors in the search result
+            indexing: attribute | index | summary
+
+            attribute {
+                distance-metric: angular  # 'angular' for cosine similarity
+            }
+        }
     }
+
     fieldset default {
         fields: title, description, content
     }
+
     rank-profile default inherits default {
         first-phase {
             expression: bm25(title) + bm25(description)
+        }
+    }
+
+    rank-profile semantic inherits default {
+        # query vector from the user 'query_vector'
+        inputs {
+            query(query_vector) tensor<float>(x[384])
+        }
+
+        # vector search
+        first-phase {
+            # cosine similarity
+            expression: closeness(field, vector)
         }
     }
 }

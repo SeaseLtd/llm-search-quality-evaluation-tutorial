@@ -15,8 +15,12 @@ services:
     depends_on:
       vespa:
         condition: service_healthy
+    environment:
+      - FORCE_REINDEX=false
     volumes:
-      - ./vespa-init/app:/app
-      - ./vespa-init/data:/data
-    entrypoint: ["/usr/bin/env","bash","-lc","/opt/vespa-init.sh"]
+      - ./vespa-init/app:/opt/app/app
+      - ./vespa-init/data/dataset.json:/opt/app/data/dataset.json
+      - ../embeddings:/opt/app/embeddings
+    working_dir: /opt/app
+    command: [ "python", "/opt/app/vespa_init.py" ]
     restart: "no"
