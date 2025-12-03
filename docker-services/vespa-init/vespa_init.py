@@ -50,13 +50,13 @@ def wait_for_vespa_config_server(config_endpoint: str, timeout: int, interval: f
         try:
             response = requests.get(health_url, timeout=5)
             if response.status_code == 200:
-                log.info("Vespa Config server is ready! (Took %.2fs)", time.time() - start_time)
+                log.info("Vespa Config server is ready.(Took %.2fs)", time.time() - start_time)
                 return
         except (requests.RequestException, ValueError):
             pass
 
         time.sleep(interval)
-    raise RuntimeError(f"Vespa Config server did not become ready after {timeout} attempts: {health_url}")
+    raise RuntimeError(f"Vespa Config server did not become ready after {timeout} seconds: {health_url}")
 
 
 def deploy_vespa_app(app_path: str, config_endpoint: str) -> None:
@@ -102,7 +102,7 @@ def wait_for_vespa_app(host_endpoint: str, timeout: int, interval: float = 1.0) 
         try:
             response = requests.get(health_url, timeout=5)
             if response.status_code == 200:
-                log.info("Vespa app is ready! (Took %.2fs)", time.time() - start_time)
+                log.info("Vespa app is ready. (Took %.2fs)", time.time() - start_time)
                 return
         except requests.RequestException:
             pass
