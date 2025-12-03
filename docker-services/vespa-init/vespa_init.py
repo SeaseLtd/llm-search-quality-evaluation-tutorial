@@ -43,27 +43,26 @@ def wait_for_vespa_config_server(config_endpoint: str, timeout: int, interval: f
     health_url = f"{config_endpoint.rstrip('/')}/state/v1/health"
     log.info("Waiting for Vespa Config server at %s ...", health_url)
 
-    for attempt in range(timeout):
+    start_time = time.time()
+    deadline = start_time + timeout
+
+    while time.time() < deadline:
         try:
             response = requests.get(health_url, timeout=5)
-            response.raise_for_status()
-            status_code = response.json()['status']['code']
-            if status_code == "up":
-                log.info("Vespa Config server is up (attempt %d)", attempt + 1)
+            if response.status_code == 200:
+                log.info("Vespa Config server is ready! (Took %.2fs)", time.time() - start_time)
                 return
         except (requests.RequestException, ValueError):
             pass
-        log.debug("  ...still waiting for Vespa Config server (%d/%d)", attempt + 1, timeout)
+
         time.sleep(interval)
     raise RuntimeError(f"Vespa Config server did not become ready after {timeout} attempts: {health_url}")
 
 
 def deploy_vespa_app(app_path: str, config_endpoint: str) -> None:
-    """ Deploys the Vespa application package.
-
-    This zips the folder at `app_path` in-memory and POSTs it to:
-      /application/v2/tenant/default/prepareandactivate
-
+    """
+    Deploys the Vespa application package.
+    This zips the folder at `app_path` in-memory and posts it to: /application/v2/tenant/default/prepareandactivate
     """
     deploy_url = f"{config_endpoint.rstrip('/')}/application/v2/tenant/default/prepareandactivate"
 
@@ -79,23 +78,15 @@ def deploy_vespa_app(app_path: str, config_endpoint: str) -> None:
                 zip_file.write(file_path, archive_name)
 
     zip_buffer.seek(0)
-
     log.info("Deploying (uploading zip) to %s ...", deploy_url)
 
     try:
-        response = requests.post(
-            deploy_url,
-            headers={"Content-Type": "application/zip"},
-            data=zip_buffer,
-            timeout=120
-        )
+        response = requests.post(deploy_url, headers={"Content-Type": "application/zip"}, data=zip_buffer,
+                                 timeout=DEFAULT_TIMEOUT)
         response.raise_for_status()
         log.info("Deployment successful. Response: %s", response.json())
-
     except requests.RequestException as e:
         log.error("Vespa deployment failed: %s", e)
-        if e.response is not None:
-            log.error("Server Response: %s", e.response.text)
         raise
 
 
@@ -104,18 +95,19 @@ def wait_for_vespa_app(host_endpoint: str, timeout: int, interval: float = 1.0) 
     health_url = f"{host_endpoint.rstrip('/')}/status.html"
     log.info("Waiting for Vespa app at %s ...", health_url)
 
-    for attempt in range(timeout):
+    start_time = time.time()
+    deadline = start_time + timeout
+
+    while time.time() < deadline:
         try:
             response = requests.get(health_url, timeout=5)
             if response.status_code == 200:
-                log.info("Vespa app is ready (attempt %d)", attempt + 1)
+                log.info("Vespa app is ready! (Took %.2fs)", time.time() - start_time)
                 return
         except requests.RequestException:
             pass
-
-        log.debug("  ...still waiting for Vespa app (%d/%d)", attempt + 1, timeout)
         time.sleep(interval)
-    raise RuntimeError(f"Vespa app did not become ready after {timeout} attempts: {health_url}")
+    raise RuntimeError(f"Vespa app did not become ready after {timeout} seconds: {health_url}")
 
 
 def get_vespa_doc_count(host_endpoint: str, timeout: int = 5) -> int:
@@ -133,11 +125,10 @@ def get_vespa_doc_count(host_endpoint: str, timeout: int = 5) -> int:
         response = requests.get(search_url, params=params, timeout=timeout)
         response.raise_for_status()
         data = response.json()
-
         return int(data.get("root", {}).get("fields", {}).get("totalCount", 0))
     except Exception as e:
-        log.warning("Unable to get document count from Vespa: %s", e)
-        return 0
+        log.error("Unable to get document count from Vespa: %s", e)
+        raise
 
 
 def load_dataset_to_dict(path: str) -> list[dict[str, Any]]:
@@ -176,8 +167,9 @@ def load_embeddings_to_dict(path: str) -> dict[str, list[float]]:
                     vectors[str(_id)] = vector
                 else:
                     log.debug("Skipping embeddings line %d: missing id or vector", i)
-            except json.JSONDecodeError:
-                log.warning("Skipping invalid JSON line %d in embeddings file", i)
+            except Exception as e:
+                log.error("Exception in embeddings file", e)
+                raise
     log.info("Loaded %d embeddings from %s", len(vectors), path)
     return vectors
 
@@ -196,8 +188,7 @@ def merge_docs_with_embeddings(docs: list[dict[str, Any]], embeddings: dict[str,
         doc = dict(d)
         doc_id = str(doc.get("id"))
         if not doc_id:
-            log.debug("Document missing id")
-
+            log.error("Document missing id")
         vector = embeddings.get(doc_id)
         if vector is not None:
             doc["vector"] = round_vector(vector, digits=12)
@@ -209,15 +200,6 @@ def merge_docs_with_embeddings(docs: list[dict[str, Any]], embeddings: dict[str,
     return merged
 
 
-def get_embedding_dimension(embeddings: dict[str, list[float]]) -> Optional[int]:
-    """Returns embedding dimension size or None."""
-    if not embeddings:
-        return None
-    # pick first vector
-    first = next(iter(embeddings.values()))
-    return len(first)
-
-
 def feed_vespa_documents(host_endpoint: str, schema: str, docs: list[dict[str, Any]], timeout: int = 10) -> None:
     """
     Feeds documents to /document/v1/default/{schema}/docid/{doc_id} Vespa
@@ -226,10 +208,10 @@ def feed_vespa_documents(host_endpoint: str, schema: str, docs: list[dict[str, A
 
     total_docs = len(docs)
     if total_docs == 0:
-        log.info("No documents provided for indexing.")
+        log.warning("No documents provided for indexing.")
         return
 
-    log.info("Indexing %d documents into Vespa schema '%s'", total_docs, schema)
+    log.info("Started indexing %d documents into Vespa schema '%s'", total_docs, schema)
 
     num_batches = (total_docs + INDEX_BATCH_SIZE - 1) // INDEX_BATCH_SIZE
 
@@ -250,8 +232,6 @@ def feed_vespa_documents(host_endpoint: str, schema: str, docs: list[dict[str, A
 
         log.info(f"Processing Batch {i + 1}/{num_batches} ({len(batch)} docs)")
 
-        batch_errors = 0
-
         for doc in batch:
             doc_id = str(doc.pop("id"))
             current_url = f"{feed_url_base}/{doc_id}"
@@ -266,20 +246,13 @@ def feed_vespa_documents(host_endpoint: str, schema: str, docs: list[dict[str, A
                 response = session.post(current_url, json=payload, timeout=timeout)
                 response.raise_for_status()
             except requests.RequestException as e:
-                if e.response is not None:
-                    log.error(f"Vespa Error Response: {e.response.text}")
-
                 log.error(f"Failed to feed document {doc_id}: {e}")
-                batch_errors += 1
-        if batch_errors > 0:
-            log.error(f"Batch {i + 1} completed with {batch_errors} failures.")
-            if index_success:
-                index_success = False
-        else:
-            log.debug(f"Batch {i + 1} indexing successful")
+                raise
 
-    if index_success:
-        log.info("Successfully processed %d documents in %d batches.", total_docs, num_batches)
+        log.debug(f"Batch {i + 1} indexing successful")
+
+    log.info("Successfully processed %d documents in %d batches.", total_docs, num_batches)
+    session.close()
 
 
 def main() -> int:
@@ -300,14 +273,8 @@ def main() -> int:
         embeddings = load_embeddings_to_dict(EMBEDDINGS_FILE)
 
         if embeddings:
-            embedding_dimension = get_embedding_dimension(embeddings)
-            if embedding_dimension is None:
-                log.error("No valid embeddings detected; aborting embedding merge")
-                sys.exit(1)
-            log.info("Detected embedding dimension = %d", embedding_dimension)
-
+            log.info("Using merged dataset with embeddings")
             merged_docs = merge_docs_with_embeddings(docs, embeddings, output_path=TMP_FILE)
-
             feed_vespa_documents(host_endpoint=HOST_ENDPOINT, schema=SCHEMA_NAME,
                                  docs=merged_docs, timeout=DEFAULT_TIMEOUT)
         else:

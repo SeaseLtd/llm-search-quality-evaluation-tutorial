@@ -1,7 +1,8 @@
 # vespa-init/Dockerfile
 FROM python:3.10-slim
 
-RUN pip install --no-cache-dir requests
+# keeping vespacli in case of querying vespa inside the vespa docker container
+RUN pip install --no-cache-dir vespacli requests
 
 WORKDIR /opt/app
 

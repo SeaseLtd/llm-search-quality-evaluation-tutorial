@@ -7,7 +7,7 @@ WORKDIR /opt/app
 COPY opensearch_init.py /opt/app/opensearch_init.py
 COPY data/ /opt/app/data/
 
-# create embeddings dir inside the opt/app
+# create embeddings dir inside opt/app/
 RUN mkdir -p /opt/app/embeddings \
  && chmod 755 /opt/app/embeddings
 
