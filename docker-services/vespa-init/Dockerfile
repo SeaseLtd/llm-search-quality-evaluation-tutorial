@@ -2,7 +2,7 @@
 FROM python:3.10-slim
 
 # keeping vespacli in case of querying vespa inside the vespa docker container
-RUN pip install --no-cache-dir vespacli requests
+RUN pip install --no-cache-dir vespacli pyvespa requests
 
 WORKDIR /opt/app
 
