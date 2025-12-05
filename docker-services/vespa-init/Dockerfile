@@ -1,14 +1,22 @@
 # vespa-init/Dockerfile
 FROM python:3.10-slim
 
-RUN apt-get update \
- && apt-get install -y --no-install-recommends curl jq ca-certificates \
- && rm -rf /var/lib/apt/lists/*
-
+# keeping vespacli in case of querying vespa inside the vespa docker container
 RUN pip install --no-cache-dir vespacli pyvespa requests
 
-WORKDIR /app
-COPY vespa-init.sh /opt/vespa-init.sh
+WORKDIR /opt/app
 
-# (optional) sanity checks
-RUN which vespa && vespa version && jq --version
+COPY vespa_init.py /opt/app/vespa_init.py
+COPY data/ /opt/app/data/
+COPY app/ /opt/app/app/
+
+
+# create embeddings dir inside /opt/app
+RUN mkdir -p /opt/app/embeddings \
+ && chmod 755 /opt/app/embeddings
+
+
+RUN chmod +x /opt/app/vespa_init.py
+
+
+CMD ["python", "/opt/app/vespa_init.py"]
