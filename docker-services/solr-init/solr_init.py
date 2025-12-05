@@ -174,6 +174,30 @@ def create_vector_field(endpoint: str, dimension: int) -> None:
     return
 
 
+def get_segment_info(endpoint: str) -> dict[str, Any]:
+    """
+    Returns segment information from Solr's /admin/segments endpoint.
+    """
+    segments_url = f"{endpoint.rstrip('/')}/admin/segments?wt=json"
+
+    try:
+        response = requests.get(segments_url, timeout=DEFAULT_TIMEOUT)
+        response.raise_for_status()
+        data = response.json()
+
+        segments = data.get("segments", {})
+        segment_count = len(segments)
+        log.info(f"Segment count: {segment_count}")
+
+        return {
+            "segment_count": segment_count,
+            "segments": segments
+        }
+
+    except requests.RequestException as e:
+        log.error(f"Failed to get segment info: {e}")
+        return {}
+
 def index_documents(endpoint: str, docs: list[dict[str, Any]]) -> None:
     """
     Sends documents to /update endpoint in batches and commit at the end.
@@ -185,9 +209,12 @@ def index_documents(endpoint: str, docs: list[dict[str, Any]]) -> None:
 
     log.info("Indexing %d documents into Solr", total_docs)
     num_batches = (total_docs + INDEX_BATCH_SIZE - 1) // INDEX_BATCH_SIZE
+    max_segments = get_segment_info(endpoint).get("segment_count", 1)
 
     update_url_no_commit = f"{endpoint.rstrip('/')}/update?commit=false"
-    update_url_commit = f"{endpoint.rstrip('/')}/update?commit=true"
+    update_url_commit = f"{endpoint.rstrip('/')}/update?commit=true&waitSearcher=true&expungeDeletes=true"
+
+    session = requests.Session()
 
     for i in range(num_batches):
         start_index = i * INDEX_BATCH_SIZE
@@ -205,7 +232,7 @@ def index_documents(endpoint: str, docs: list[dict[str, Any]]) -> None:
         log.info(f"Sending Batch {i + 1}/{num_batches} ({len(batch)} docs, commit={commit_status})")
 
         try:
-            response = requests.post(current_update_url, json=batch, timeout=DEFAULT_TIMEOUT)
+            response = session.post(current_update_url, json=batch, timeout=DEFAULT_TIMEOUT)
             response.raise_for_status()
             log.debug(f"Batch {i + 1} indexing successful (status={response.status_code})")
 
@@ -214,6 +241,20 @@ def index_documents(endpoint: str, docs: list[dict[str, Any]]) -> None:
             raise Exception(f"Failed during batch {i + 1} indexing.") from e
 
     log.info("Successfully indexed %d documents in %d batches.", total_docs, num_batches)
+
+    if FORCE_REINDEX:
+        optimize_url = f"{endpoint.rstrip('/')}/update?optimize=true&maxSegments={max_segments}&waitSearcher=true"
+
+        log.info(f"Forcing segment merge to {max_segments} segment(s)...")
+        try:
+            response = session.post(optimize_url, json={}, timeout=DEFAULT_TIMEOUT)
+            response.raise_for_status()
+            log.info(f"Segment merge completed (status={response.status_code})")
+        except requests.RequestException as e:
+            log.error(f"Failed to force merge: {e}")
+            raise Exception("Failed to force merge segments.") from e
+
+        session.close()
 
 
 def main() -> int:
