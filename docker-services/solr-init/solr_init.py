@@ -189,39 +189,43 @@ def index_documents(endpoint: str, docs: list[dict[str, Any]]) -> None:
     update_url_no_commit = f"{endpoint.rstrip('/')}/update?commit=false"
     update_url_commit = f"{endpoint.rstrip('/')}/update?commit=true"
 
-    session = requests.Session()
+    with requests.Session() as session:
 
-    if FORCE_REINDEX:
-        session.post(update_url_commit, json={"delete": {"query": "*:*"}}, timeout=DEFAULT_TIMEOUT)
-        log.info("Deleted all documents before reindexing.")
+        if FORCE_REINDEX:
+            try:
+                session.post(update_url_commit, json={"delete": {"query": "*:*"}}, timeout=DEFAULT_TIMEOUT)
+                log.info("Deleted all documents before reindexing.")
+            except requests.RequestException as e:
+                log.error("Failed to delete all documents before reindexing: %s", e)
+                raise Exception("Failed to delete all documents before reindexing") from e
 
-    for i in range(num_batches):
-        start_index = i * INDEX_BATCH_SIZE
-        end_index = min((i + 1) * INDEX_BATCH_SIZE, total_docs)
-        batch = docs[start_index:end_index]
 
-        if not batch:
-            continue
+        for i in range(num_batches):
+            start_index = i * INDEX_BATCH_SIZE
+            end_index = min((i + 1) * INDEX_BATCH_SIZE, total_docs)
+            batch = docs[start_index:end_index]
 
-        is_last_batch = (i == num_batches - 1)
+            if not batch:
+                continue
 
-        current_update_url = update_url_commit if is_last_batch else update_url_no_commit
-        commit_status = "true" if is_last_batch else "false"
+            is_last_batch = (i == num_batches - 1)
 
-        log.info(f"Sending Batch {i + 1}/{num_batches} ({len(batch)} docs, commit={commit_status})")
+            current_update_url = update_url_commit if is_last_batch else update_url_no_commit
+            commit_status = "true" if is_last_batch else "false"
 
-        try:
-            response = session.post(current_update_url, json=batch, timeout=DEFAULT_TIMEOUT)
-            response.raise_for_status()
-            log.debug(f"Batch {i + 1} indexing successful (status={response.status_code})")
+            log.info(f"Sending Batch {i + 1}/{num_batches} ({len(batch)} docs, commit={commit_status})")
 
-        except requests.RequestException as e:
-            log.error(f"Failed to index batch {i + 1}: {e}")
-            raise Exception(f"Failed during batch {i + 1} indexing.") from e
+            try:
+                response = session.post(current_update_url, json=batch, timeout=DEFAULT_TIMEOUT)
+                response.raise_for_status()
+                log.debug(f"Batch {i + 1} indexing successful (status={response.status_code})")
 
-    log.info("Successfully indexed %d documents in %d batches.", total_docs, num_batches)
+            except requests.RequestException as e:
+                log.error(f"Failed to index batch {i + 1}: {e}")
+                raise Exception(f"Failed during batch {i + 1} indexing.") from e
 
-    session.close()
+        log.info("Successfully indexed %d documents in %d batches.", total_docs, num_batches)
+
 
 
 def main() -> int:
